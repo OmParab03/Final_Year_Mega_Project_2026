@@ -56,6 +56,10 @@ export class Dashboard implements OnInit {
     });
   }
 
+  goToSkin(){
+    this.router.navigate(['/skin-analysis']);
+  }
+
   logout() {
     this.authService.logout();
     this.router.navigate(['/']);

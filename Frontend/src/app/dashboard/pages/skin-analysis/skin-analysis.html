@@ -1,0 +1,16 @@
+<h2>Skin Analysis</h2>
+
+<input type="file" (change)="onFileSelected($event)">
+
+<div *ngIf="selectedImage">
+  <img [src]="selectedImage" width="200">
+</div>
+
+<button (click)="analyzeSkin()">Analyze Skin</button>
+
+<div *ngIf="result.skinType">
+  <h3>Results</h3>
+  <p>Skin Type: {{ result.skinType }}</p>
+  <p>Acne: {{ result.acne }}</p>
+  <p>Redness: {{ result.redness }}</p>
+</div>

@@ -1,0 +1,78 @@
+/* Page Styling */
+h2 {
+  text-align: center;
+  margin-top: 20px;
+  color: #2c3e50;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* File Input */
+input[type="file"] {
+  display: block;
+  margin: 20px auto;
+  padding: 10px;
+  border: 2px dashed #ccc;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #fafafa;
+  transition: 0.3s;
+}
+
+input[type="file"]:hover {
+  border-color: #4CAF50;
+  background: #f0fff0;
+}
+
+/* Image Preview */
+img {
+  display: block;
+  margin: 20px auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* Button */
+button {
+  display: block;
+  margin: 20px auto;
+  padding: 12px 25px;
+  background: linear-gradient(135deg, #4CAF50, #2e7d32);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: linear-gradient(135deg, #43a047, #1b5e20);
+}
+
+/* Results Section */
+h3 {
+  text-align: center;
+  margin-top: 30px;
+  color: #34495e;
+}
+
+p {
+  max-width: 400px;
+  margin: 10px auto;
+  padding: 10px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  border-left: 4px solid #4CAF50;
+  font-size: 15px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  img {
+    width: 90%;
+  }
+
+  p {
+    width: 90%;
+  }
+}
