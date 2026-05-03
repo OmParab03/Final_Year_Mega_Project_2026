@@ -1,0 +1,18 @@
+1. Start MySQL and create database:
+   CREATE DATABASE skincare_user_profiles_db;
+
+2. Backend setup:
+   cd Backend
+   pip install -r requirements.txt
+   python app.py
+
+3. Frontend setup:
+   cd Frontend
+   npm install
+   ng serve
+
+4. Open browser:
+   http://localhost:4200
+
+Backend:
+http://localhost:5000
