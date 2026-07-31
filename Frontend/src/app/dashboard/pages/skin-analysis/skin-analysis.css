@@ -1,26 +1,59 @@
-/* Page Styling */
-h2 {
-  text-align: center;
-  margin-top: 20px;
-  color: #2c3e50;
+/* Main Container */
+.analysis-container {
+  min-height: 100vh;
+
+  /* Background */
+  background: 
+    linear-gradient(135deg, rgba(186, 197, 241, 0.88), rgba(208, 189, 227, 0.88)),
+    url('/assets/images/Toxiscan.jpeg');
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  /* ✅ PERFECT CENTER */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 20px;
   font-family: 'Segoe UI', sans-serif;
+}
+
+/* Content Card (Glass Effect) */
+.analysis-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  padding: 30px;
+  border-radius: 15px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+/* Heading */
+h2 {
+  margin-bottom: 20px;
+  color: #764ba2;
 }
 
 /* File Input */
 input[type="file"] {
   display: block;
-  margin: 20px auto;
-  padding: 10px;
+  margin: 15px auto;
+  padding: 12px;
   border: 2px dashed #ccc;
   border-radius: 10px;
   cursor: pointer;
   background: #fafafa;
   transition: 0.3s;
+  width: 100%;
 }
 
 input[type="file"]:hover {
-  border-color: #4CAF50;
-  background: #f0fff0;
+  border-color: #764ba2;
+  background: #f4f0ff;
 }
 
 /* Image Preview */
@@ -28,51 +61,49 @@ img {
   display: block;
   margin: 20px auto;
   border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  max-width: 100%;
 }
 
 /* Button */
 button {
-  display: block;
-  margin: 20px auto;
+  margin-top: 15px;
   padding: 12px 25px;
-  background: linear-gradient(135deg, #4CAF50, #2e7d32);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   border: none;
   border-radius: 10px;
   font-size: 16px;
   cursor: pointer;
   transition: 0.3s;
+  width: 100%;
 }
 
 button:hover {
-  background: linear-gradient(135deg, #43a047, #1b5e20);
+  transform: scale(1.03);
+  opacity: 0.9;
 }
 
 /* Results Section */
 h3 {
-  text-align: center;
-  margin-top: 30px;
-  color: #34495e;
+  margin-top: 25px;
+  color: #444;
 }
 
+/* Result Cards */
 p {
-  max-width: 400px;
-  margin: 10px auto;
-  padding: 10px;
-  background: #f5f7fa;
+  margin: 10px 0;
+  padding: 12px;
+  background: rgba(245, 247, 250, 0.9);
   border-radius: 8px;
-  border-left: 4px solid #4CAF50;
+  border-left: 4px solid #764ba2;
   font-size: 15px;
+  text-align: left;
 }
 
 /* Responsive */
 @media (max-width: 600px) {
-  img {
-    width: 90%;
-  }
-
-  p {
-    width: 90%;
+  .analysis-card {
+    padding: 20px;
   }
 }
