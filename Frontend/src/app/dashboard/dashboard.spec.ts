@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
 import { Dashboard } from './dashboard';
 
 describe('Dashboard', () => {
@@ -8,7 +9,11 @@ describe('Dashboard', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Dashboard],
+      imports: [
+        Dashboard,
+        HttpClientTestingModule,
+        RouterTestingModule
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Dashboard);
@@ -18,5 +23,22 @@ describe('Dashboard', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should return correct greeting', () => {
+    const greeting = component.getGreeting();
+    expect(['Morning', 'Afternoon', 'Evening']).toContain(greeting);
+  });
+
+  it('should default to dashboard tab', () => {
+    expect(component.activeTab).toBe('dashboard');
+  });
+
+  it('should remove image on removeImage()', () => {
+    component.previewUrl = 'test-url';
+    component.selectedFile = new File([''], 'test.jpg');
+    component.removeImage();
+    expect(component.previewUrl).toBeNull();
+    expect(component.selectedFile).toBeNull();
   });
 });

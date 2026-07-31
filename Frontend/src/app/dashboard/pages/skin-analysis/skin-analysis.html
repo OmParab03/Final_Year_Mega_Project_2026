@@ -1,16 +1,27 @@
-<h2>Skin Analysis</h2>
+<div class="analysis-container">
+  <div class="analysis-card">
 
-<input type="file" (change)="onFileSelected($event)">
+    <h2>Skin Analysis</h2>
 
-<div *ngIf="selectedImage">
-  <img [src]="selectedImage" width="200">
-</div>
+    <!-- File Upload -->
+    <input type="file" (change)="onFileSelected($event)">
 
-<button (click)="analyzeSkin()">Analyze Skin</button>
+    <!-- Image Preview -->
+    <div *ngIf="selectedImage">
+      <img [src]="selectedImage" alt="Preview">
+    </div>
 
-<div *ngIf="result.skinType">
-  <h3>Results</h3>
-  <p>Skin Type: {{ result.skinType }}</p>
-  <p>Acne: {{ result.acne }}</p>
-  <p>Redness: {{ result.redness }}</p>
+    <!-- Analyze Button -->
+    <button (click)="analyzeSkin()">Analyze Skin</button>
+
+    <!-- Results -->
+    <div *ngIf="result.skinType">
+      <h3>Results</h3>
+
+      <p><strong>Skin Type:</strong> {{ result.skinType }}</p>
+      <p><strong>Acne:</strong> {{ result.acne }}</p>
+      <p><strong>Redness:</strong> {{ result.redness }}</p>
+    </div>
+
+  </div>
 </div>

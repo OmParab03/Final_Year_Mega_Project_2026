@@ -3,116 +3,205 @@ import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+  AbstractControl
+} from '@angular/forms';
 
 @Component({
   selector: 'app-auth',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './auth.html',
   styleUrls: ['./auth.css']
 })
 export class Auth {
-
   errorMessage: string = '';
   successMessage: string = '';
   isLoading: boolean = false;
-
   isSignIn: boolean = true;
+  showPassword: boolean = false;
+  showConfirmPassword: boolean = false;
 
-  signInData = {
-    email: '',
-    password: ''
-  };
-
-  signUpData = {
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  };
+  authForm: FormGroup;
+  formType: 'signIn' | 'signUp' = 'signIn';
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private fb: FormBuilder
   ) {
-    // Removed: Don't check localStorage in constructor (SSR issue)
+    this.authForm = this.fb.group({});
+    this.initializeForm();
   }
 
-  showSignIn() {
+  // ==================== FORM INIT ====================
+  initializeForm(): void {
+    if (this.formType === 'signIn') {
+      this.authForm = this.fb.group({
+        email: ['', [Validators.required, Validators.email]],
+        password: ['', [Validators.required, Validators.minLength(6)]]
+      });
+    } else {
+      this.authForm = this.fb.group(
+        {
+          name: ['', Validators.required],
+          email: ['', [Validators.required, Validators.email]],
+          password: ['', [Validators.required, Validators.minLength(6)]],
+          confirmPassword: ['', Validators.required]
+        },
+        { validators: this.passwordMatchValidator }
+      );
+    }
+  }
+
+  passwordMatchValidator(form: AbstractControl) {
+    const password = form.get('password')?.value;
+    const confirmPassword = form.get('confirmPassword')?.value;
+    return password === confirmPassword ? null : { mismatch: true };
+  }
+
+  // ==================== SWITCH FORMS ====================
+  switchToSignIn(): void {
+    if (this.isSignIn) return;
     this.isSignIn = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-    this.isLoading = false;
+    this.formType = 'signIn';
+    this.resetState();
+    this.initializeForm();
   }
 
-  showSignUp() {
+  switchToSignUp(): void {
+    if (!this.isSignIn) return;
     this.isSignIn = false;
+    this.formType = 'signUp';
+    this.resetState();
+    this.initializeForm();
+  }
+
+  switchForm(): void {
+    this.isSignIn ? this.switchToSignUp() : this.switchToSignIn();
+  }
+
+  resetState(): void {
     this.errorMessage = '';
     this.successMessage = '';
     this.isLoading = false;
+    this.showPassword = false;
+    this.showConfirmPassword = false;
   }
 
-  onSignIn() {
-    this.errorMessage = '';
-    this.successMessage = '';
+  // ==================== PASSWORD STRENGTH ====================
+  getPasswordStrength(): { width: string; color: string; label: string } {
+    const password = this.authForm.get('password')?.value || '';
+    const length = password.length;
 
-    if (!this.signInData.email || !this.signInData.password) {
-      this.errorMessage = 'Please fill in all fields!';
-      return;
+    if (length === 0) {
+      return { width: '0%', color: '#e5e7eb', label: '' };
+    }
+    if (length < 4) {
+      return { width: '20%', color: '#ef4444', label: 'Very weak' };
+    }
+    if (length < 6) {
+      return { width: '40%', color: '#f97316', label: 'Weak' };
     }
 
-    this.isLoading = true;
+    let strength = 0;
+    if (length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
 
-    this.authService.signin(this.signInData).subscribe({
-      next: (res: any) => {
-        console.log('Login Success:', res);
-        this.isLoading = false;
-        this.authService.saveToken(res.token, res.user);
-        this.router.navigate(['/dashboard']);
-      },
-      error: (err: any) => {
-        console.log('Login Error:', err);
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Login Failed!';
-      }
-    });
+    if (strength <= 1) {
+      return { width: '50%', color: '#eab308', label: 'Fair' };
+    } else if (strength === 2) {
+      return { width: '70%', color: '#22c55e', label: 'Good' };
+    } else {
+      return { width: '100%', color: '#16a34a', label: 'Strong' };
+    }
   }
 
-  onSignUp() {
+  // ==================== SUBMIT ====================
+  onSubmit(): void {
+    if (this.authForm.invalid) {
+      this.authForm.markAllAsTouched();
+      this.errorMessage = 'Please fill in all fields correctly.';
+      return;
+    }
+
     this.errorMessage = '';
     this.successMessage = '';
-
-    if (!this.signUpData.name || !this.signUpData.email ||
-        !this.signUpData.password || !this.signUpData.confirmPassword) {
-      this.errorMessage = 'Please fill in all fields!';
-      return;
-    }
-
-    if (this.signUpData.password !== this.signUpData.confirmPassword) {
-      this.errorMessage = 'Passwords do not match!';
-      return;
-    }
-
-    if (this.signUpData.password.length < 6) {
-      this.errorMessage = 'Password must be at least 6 characters!';
-      return;
-    }
-
     this.isLoading = true;
 
-    this.authService.signup(this.signUpData).subscribe({
-      next: (res: any) => {
-        console.log('Signup Success:', res);
-        this.isLoading = false;
-        this.successMessage = 'Account created successfully!';
-        this.authService.saveToken(res.token, res.user);
-        this.router.navigate(['/dashboard']);
-      },
-      error: (err: any) => {
-        console.log('Signup Error:', err);
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Signup Failed!';
-      }
-    });
+    const formData = this.authForm.value;
+
+    if (this.formType === 'signIn') {
+      this.authService
+        .signin({
+          email: formData['email'],
+          password: formData['password']
+        })
+        .subscribe({
+          next: (res: any) => this.onSuccess(res),
+          error: (err: any) => this.onError(err)
+        });
+    } else {
+      this.authService
+        .signup({
+          name: formData['name'],
+          email: formData['email'],
+          password: formData['password']
+        })
+        .subscribe({
+          next: (res: any) => this.onSuccess(res),
+          error: (err: any) => this.onError(err)
+        });
+    }
+  }
+
+  // ==================== HANDLERS ====================
+  onSuccess(res: any): void {
+    this.isLoading = false;
+
+    if (this.formType === 'signUp') {
+      this.successMessage = 'Account created! Signing you in...';
+    }
+
+    this.authService.saveToken(res.token, res.user);
+
+    const delay = this.formType === 'signUp' ? 1000 : 300;
+    setTimeout(() => {
+      this.router.navigate(['/dashboard']);
+    }, delay);
+  }
+
+  onError(err: any): void {
+    this.isLoading = false;
+    const action = this.formType === 'signIn' ? 'Sign in' : 'Sign up';
+    this.errorMessage =
+      err.error?.message || `${action} failed. Please try again.`;
+
+    setTimeout(() => {
+      this.errorMessage = '';
+    }, 5000);
+  }
+
+  // ==================== FORM GETTERS ====================
+  get nameControl(): AbstractControl | null {
+    return this.authForm.get('name');
+  }
+
+  get emailControl(): AbstractControl | null {
+    return this.authForm.get('email');
+  }
+
+  get passwordControl(): AbstractControl | null {
+    return this.authForm.get('password');
+  }
+
+  get confirmPasswordControl(): AbstractControl | null {
+    return this.authForm.get('confirmPassword');
   }
 }
