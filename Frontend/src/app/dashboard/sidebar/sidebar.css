@@ -1,0 +1,180 @@
+.sidebar {
+  width: 260px;
+  background: #ffffff;
+  border-right: 1px solid #eef0f6;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
+  transition: transform 0.3s ease, width 0.3s ease;
+}
+
+/* Collapsed on ALL screens */
+.sidebar.collapsed {
+  transform: translateX(-100%);
+}
+
+.sidebar-top {
+  padding: 28px 20px 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ==================== BRAND ==================== */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid #f0f1f5;
+  margin-bottom: 24px;
+}
+
+.brand-icon {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #56ab8a, #44c9a1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1d2e;
+  letter-spacing: -0.3px;
+}
+
+/* ==================== NAV ==================== */
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  color: #6b7280;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+  background: #f3f6fb;
+  color: #374151;
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, #e8f5ee, #dff5ec);
+  color: #15803d;
+}
+
+.nav-item.active svg {
+  stroke: #16a34a;
+}
+
+.nav-item span {
+  white-space: nowrap;
+}
+
+/* ==================== SIDEBAR BOTTOM ==================== */
+.sidebar-bottom {
+  padding: 16px 20px 20px;
+  border-top: 1px solid #f0f1f5;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-decoration: none;
+}
+
+.user-card:hover {
+  background: #f9fafb;
+}
+
+.user-avatar-small {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  background: linear-gradient(135deg, #56ab8a, #44c9a1);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.user-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.user-card-email {
+  font-size: 11px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.logout-icon {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  flex-shrink: 0;
+}
+
+.logout-icon:hover {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar:not(.collapsed) {
+    transform: translateX(0);
+  }
+}

@@ -1,0 +1,62 @@
+<div class="settings-wrapper">
+
+  <!-- Header -->
+  <div class="tab-header">
+    <h2>Settings</h2>
+    <p>Customize your experience</p>
+  </div>
+
+  <!-- Success Message -->
+  <div class="toast-success" *ngIf="successMessage">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="9 12 11 14 15 10"/>
+    </svg>
+    {{ successMessage }}
+  </div>
+
+  <!-- Settings Group -->
+  <div class="settings-card">
+
+    <div class="setting-item">
+      <div class="setting-info">
+        <h4>Email Notifications</h4>
+        <p>Receive analysis results via email</p>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" [(ngModel)]="settings.emailNotifications">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-item">
+      <div class="setting-info">
+        <h4>Save Analysis History</h4>
+        <p>Keep records of past analyses</p>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" [(ngModel)]="settings.saveHistory">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-item">
+      <div class="setting-info">
+        <h4>Dark Mode</h4>
+        <p>Switch to dark theme</p>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" [(ngModel)]="settings.darkMode">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+  </div>
+
+  <!-- Save Button -->
+  <button class="btn-primary" (click)="saveSettings()">
+    Save Settings
+  </button>
+
+</div>
