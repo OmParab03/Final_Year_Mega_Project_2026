@@ -7,10 +7,9 @@
 
 from flask              import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from extensions         import db
-from models.user        import User
+from models              import user as user_model
 from datetime           import datetime
-import os, uuid, base64
+import os, uuid
 
 profile_bp = Blueprint('profile', __name__)
 
@@ -26,53 +25,52 @@ def allowed_file(filename: str) -> bool:
 @profile_bp.route('', methods=['GET'])
 @jwt_required()
 def get_profile():
-    user_id = int(get_jwt_identity())
-    user    = User.query.get(user_id)
+    user = user_model.find_by_id(get_jwt_identity())
 
     if not user:
         return jsonify({'message': 'User not found!'}), 404
 
-    return jsonify(user.to_dict()), 200
+    return jsonify(user_model.to_dict(user)), 200
 
 
 # ── PUT /api/profile ──────────────────────────
 @profile_bp.route('', methods=['PUT'])
 @jwt_required()
 def update_profile():
-    user_id = int(get_jwt_identity())
-    user    = User.query.get(user_id)
+    user_id = get_jwt_identity()
+    user    = user_model.find_by_id(user_id)
 
     if not user:
         return jsonify({'message': 'User not found!'}), 404
 
-    data = request.get_json()
+    data    = request.get_json()
+    updates = {}
 
     # Update only provided fields
     if 'name' in data:
         name = data['name'].strip()
         if not name:
             return jsonify({'message': 'Name cannot be empty!'}), 400
-        user.name = name
+        updates['name'] = name
 
     if 'phone' in data:
-        user.phone = data['phone'].strip() or None
+        updates['phone'] = data['phone'].strip() or None
 
     if 'dob' in data:
         dob_str = data['dob'].strip()
         if dob_str:
             try:
-                user.dob = datetime.strptime(dob_str, '%Y-%m-%d').date()
+                updates['dob'] = datetime.strptime(dob_str, '%Y-%m-%d')
             except ValueError:
                 return jsonify({'message': 'Date format must be YYYY-MM-DD'}), 400
         else:
-            user.dob = None
+            updates['dob'] = None
 
-    user.updated_at = datetime.utcnow()
-    db.session.commit()
+    user = user_model.update_user(user_id, updates)
 
     return jsonify({
         'message': 'Profile updated successfully!',
-        'user':    user.to_dict()
+        'user':    user_model.to_dict(user)
     }), 200
 
 
@@ -80,8 +78,8 @@ def update_profile():
 @profile_bp.route('/photo', methods=['POST'])
 @jwt_required()
 def upload_photo():
-    user_id = int(get_jwt_identity())
-    user    = User.query.get(user_id)
+    user_id = get_jwt_identity()
+    user    = user_model.find_by_id(user_id)
 
     if not user:
         return jsonify({'message': 'User not found!'}), 404
@@ -108,18 +106,14 @@ def upload_photo():
         file.save(filepath)
 
         # Delete old photo file if exists
-        if user.photo_url and user.photo_url.startswith('/uploads/'):
-            old_path = os.path.join(
-                os.getcwd(),
-                user.photo_url.lstrip('/')
-            )
+        old_photo = user.get('photo_url')
+        if old_photo and old_photo.startswith('/uploads/'):
+            old_path = os.path.join(os.getcwd(), old_photo.lstrip('/'))
             if os.path.exists(old_path):
                 os.remove(old_path)
 
         photo_url = f'/uploads/profiles/{filename}'
-        user.photo_url  = photo_url
-        user.updated_at = datetime.utcnow()
-        db.session.commit()
+        user_model.update_user(user_id, {'photo_url': photo_url})
 
         return jsonify({
             'message':  'Photo uploaded successfully!',
@@ -135,9 +129,7 @@ def upload_photo():
         if not base64_str.startswith('data:image'):
             return jsonify({'message': 'Invalid image data!'}), 400
 
-        user.photo_url  = base64_str      # store base64 directly
-        user.updated_at = datetime.utcnow()
-        db.session.commit()
+        user_model.update_user(user_id, {'photo_url': base64_str})
 
         return jsonify({
             'message':  'Photo saved successfully!',

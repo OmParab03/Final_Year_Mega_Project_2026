@@ -7,6 +7,8 @@ import { isPlatformBrowser }               from '@angular/common';
 export class AuthService {
 
   private apiUrl    = 'http://localhost:5000/api';
+  /** Backend origin (no /api suffix) — use to build absolute URLs for server-served files like /uploads/... */
+  readonly apiOrigin = 'http://localhost:5000';
   private platformId = inject(PLATFORM_ID);
 
   constructor(private http: HttpClient) {}
@@ -72,7 +74,20 @@ export class AuthService {
     return this.http.put(`${this.apiUrl}/settings`, settings, { headers: this.authHeaders() });
   }
 
-  // ── Analysis (for your colleague) ──────────
+  // ── Analysis ────────────────────────────────
+  /**
+   * Uploads a skin photo and runs the real AI analysis (skin type + condition
+   * detection via the backend's Hugging Face integration). The result is
+   * persisted server-side and returned here for display.
+   */
+  analyzeSkin(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('photo', file);
+    return this.http.post(`${this.apiUrl}/analysis/scan`, formData, {
+      headers: new HttpHeaders({ Authorization: `Bearer ${this.getToken() ?? ''}` })
+    });
+  }
+
   saveAnalysis(data: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/analysis/save`, data, { headers: this.authHeaders() });
   }

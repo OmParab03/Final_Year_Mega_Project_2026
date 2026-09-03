@@ -5,15 +5,14 @@
 
 from flask          import Flask, send_from_directory
 from config         import Config
-from extensions     import db, jwt, cors
-import os
+from extensions     import jwt, cors, init_mongo
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
     # ── Init extensions ───────────────────────
-    db.init_app(app)
+    init_mongo(app)
     jwt.init_app(app)
     cors.init_app(app, resources={
         r'/api/*': {
@@ -37,20 +36,19 @@ def create_app():
     # ── Serve uploaded profile photos ─────────
     @app.route('/uploads/profiles/<filename>')
     def serve_photo(filename):
-        upload_folder = app.config['UPLOAD_FOLDER']
-        return send_from_directory(upload_folder, filename)
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-    # ── Create all tables ─────────────────────
-    with app.app_context():
-        import models          # noqa: F401  triggers model registration
-        db.create_all()
-        print('✅ Database tables ready!')
+    # ── Serve uploaded skin-scan photos ───────
+    @app.route('/uploads/skin_scans/<filename>')
+    def serve_skin_scan(filename):
+        return send_from_directory(app.config['SKIN_SCAN_FOLDER'], filename)
 
     # ── Health check ──────────────────────────
     @app.route('/')
     def home():
         return {'status': 'ToxiScan API running 🚀'}, 200
 
+    print('MongoDB connected!')
     return app
 
 

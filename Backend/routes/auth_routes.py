@@ -7,9 +7,8 @@
 from flask               import Blueprint, request, jsonify
 from flask_jwt_extended  import create_access_token
 from werkzeug.security   import generate_password_hash, check_password_hash
-from extensions          import db
-from models.user         import User
-from models.user_settings import UserSettings
+from models              import user as user_model
+from models              import user_settings as settings_model
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -29,26 +28,22 @@ def signup():
         return jsonify({'message': 'Password must be at least 6 characters!'}), 400
 
     # Check duplicate email
-    if User.query.filter_by(email=email).first():
+    if user_model.find_by_email(email):
         return jsonify({'message': 'Email already registered!'}), 409
 
     # Create user
     hashed = generate_password_hash(password)
-    user   = User(name=name, email=email, password=hashed)
-    db.session.add(user)
-    db.session.flush()          # get user.id before commit
+    user   = user_model.create_user(name, email, hashed)
 
-    # Auto-create default settings row for this user
-    settings = UserSettings(user_id=user.id)
-    db.session.add(settings)
-    db.session.commit()
+    # Auto-create default settings doc for this user
+    settings_model.get_or_create_settings(user['_id'])
 
-    token = create_access_token(identity=str(user.id))
+    token = create_access_token(identity=str(user['_id']))
 
     return jsonify({
         'message': 'Account created successfully!',
         'token':   token,
-        'user':    user.to_dict()
+        'user':    user_model.to_dict(user)
     }), 201
 
 
@@ -62,18 +57,18 @@ def signin():
     if not email or not password:
         return jsonify({'message': 'Email and password are required!'}), 400
 
-    user = User.query.filter_by(email=email).first()
+    user = user_model.find_by_email(email)
 
     if not user:
         return jsonify({'message': 'No account found with this email!'}), 404
 
-    if not check_password_hash(user.password, password):
+    if not check_password_hash(user['password'], password):
         return jsonify({'message': 'Incorrect password!'}), 401
 
-    token = create_access_token(identity=str(user.id))
+    token = create_access_token(identity=str(user['_id']))
 
     return jsonify({
         'message': 'Login successful!',
         'token':   token,
-        'user':    user.to_dict()
+        'user':    user_model.to_dict(user)
     }), 200

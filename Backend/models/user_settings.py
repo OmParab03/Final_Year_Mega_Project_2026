@@ -1,49 +1,49 @@
 # models/user_settings.py
 # ─────────────────────────────────────────────
-# One row per user — stores all toggle settings
+# user_settings collection — one doc per user
 # ─────────────────────────────────────────────
 
 from extensions import db
 from datetime   import datetime
+from bson       import ObjectId
 
-class UserSettings(db.Model):
-    __tablename__ = 'user_settings'
+_DEFAULTS = {
+    'email_notifications':   True,
+    'save_analysis_history': True,
+    'dark_mode':             False,
+}
 
-    # ── Primary Key ───────────────────────────
-    id = db.Column(
-        db.Integer,
-        primary_key=True,
-        autoincrement=True
-    )
 
-    # ── Foreign Key → users ───────────────────
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey('users.id', ondelete='CASCADE'),
-        nullable=False,
-        unique=True             # one row per user
-    )
+def get_or_create_settings(user_id):
+    oid = ObjectId(user_id)
+    settings = db.user_settings.find_one({'user_id': oid})
+    if settings:
+        return settings
 
-    # ── Settings Fields ───────────────────────
-    email_notifications  = db.Column(db.Boolean, default=True,  nullable=False)
-    save_analysis_history = db.Column(db.Boolean, default=True,  nullable=False)
-    dark_mode            = db.Column(db.Boolean, default=False, nullable=False)
+    doc = {'user_id': oid, **_DEFAULTS, 'updated_at': datetime.utcnow()}
+    db.user_settings.insert_one(doc)
+    return doc
 
-    # ── Timestamps ────────────────────────────
-    updated_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
-        nullable=False
-    )
 
-    # ── Serializer ────────────────────────────
-    def to_dict(self):
-        return {
-            'emailNotifications':  self.email_notifications,
-            'saveAnalysisHistory': self.save_analysis_history,
-            'darkMode':            self.dark_mode,
-        }
+def update_settings(user_id, updates: dict):
+    """Assumes get_or_create_settings() has already been called for this user."""
+    oid = ObjectId(user_id)
+    patch = {'updated_at': datetime.utcnow()}
 
-    def __repr__(self):
-        return f'<UserSettings user_id={self.user_id}>'
+    if 'emailNotifications' in updates:
+        patch['email_notifications'] = bool(updates['emailNotifications'])
+    if 'saveAnalysisHistory' in updates:
+        patch['save_analysis_history'] = bool(updates['saveAnalysisHistory'])
+    if 'darkMode' in updates:
+        patch['dark_mode'] = bool(updates['darkMode'])
+
+    db.user_settings.update_one({'user_id': oid}, {'$set': patch})
+    return db.user_settings.find_one({'user_id': oid})
+
+
+def to_dict(settings):
+    return {
+        'emailNotifications':  settings.get('email_notifications', True),
+        'saveAnalysisHistory': settings.get('save_analysis_history', True),
+        'darkMode':            settings.get('dark_mode', False),
+    }

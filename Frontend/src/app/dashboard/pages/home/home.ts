@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
@@ -26,7 +26,7 @@ export class HomeComponent implements OnInit {
   // Recent history
   recentHistory: any[] = [];
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.loadStats();
@@ -74,14 +74,22 @@ export class HomeComponent implements OnInit {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       this.errorMessage = 'Please upload a JPG, PNG, or WEBP image.';
-      setTimeout(() => this.errorMessage = '', 3000);
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
       return;
     }
 
     // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
       this.errorMessage = 'File size must be less than 10MB.';
-      setTimeout(() => this.errorMessage = '', 3000);
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
       return;
     }
 
@@ -89,6 +97,9 @@ export class HomeComponent implements OnInit {
     const reader = new FileReader();
     reader.onload = () => {
       this.previewUrl = reader.result as string;
+      // FileReader callbacks run outside Angular's change-detection scheduler
+      // (this app uses zoneless CD), so the view won't refresh on its own here.
+      this.cdr.markForCheck();
     };
     reader.readAsDataURL(file);
   }
@@ -103,11 +114,12 @@ export class HomeComponent implements OnInit {
     this.analyzing = true;
     setTimeout(() => {
       this.analyzing = false;
-      this.router.navigate(['/dashboard/ingredient-analysis']);
+      this.cdr.markForCheck();
+      this.router.navigate(['/dashboard/skin-analysis']);
     }, 1500);
   }
 
   goToHistory() {
-    this.router.navigate(['/dashboard/history']);
+    this.router.navigate(['/dashboard/skin-analysis']);
   }
 }

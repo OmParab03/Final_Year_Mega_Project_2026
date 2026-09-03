@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -23,34 +23,36 @@ export class ProfileComponent implements OnInit {
   dob: string = '';
   allergies: string = '';
 
-  // Skin Type Options
+  // Skin Type Options — the only classes the classifier model predicts
   skinTypes = [
-    'Normal',
     'Dry',
-    'Combination',
     'Oily',
-    'Sensitive'
+    'Combination'
   ];
-  selectedSkinType: string = 'Oily';
+  selectedSkinType: string = '';
 
-  // Skin Condition Options
+  // Skin Condition Options — the only classes the condition model predicts
   skinConditions = [
     'None / Maintenance',
     'Acne',
-    'Pigmentation',
-    'Redness / Rosacea',
-    'Aging / Wrinkles',
-    'Dehydration'
+    'Redness',
+    'Pigmentation'
   ];
   selectedCondition: string = 'None / Maintenance';
 
+  // Set once a real scan result is loaded, so the UI can say where these values came from
+  lastAnalyzedDate: string | null = null;
+  hasRealAnalysis: boolean = false;
+
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     this.loadProfile();
+    this.loadLatestAnalysis();
   }
 
   loadProfile() {
@@ -61,6 +63,7 @@ export class ProfileComponent implements OnInit {
       this.user = savedUser;
       this.fillForm(savedUser);
       this.loading = false;
+      this.cdr.markForCheck();
     }
 
     this.authService.getProfile().subscribe({
@@ -68,13 +71,58 @@ export class ProfileComponent implements OnInit {
         this.user = res;
         this.fillForm(res);
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.loading = false;
         this.errorMessage = 'Failed to load profile.';
-        setTimeout(() => this.errorMessage = '', 3000);
+        this.cdr.markForCheck();
+        setTimeout(() => {
+          this.errorMessage = '';
+          this.cdr.markForCheck();
+        }, 3000);
       }
     });
+  }
+
+  /** Pulls the most recent skin scan and prefills the Skin Type / Condition sections with it. */
+  loadLatestAnalysis() {
+    this.authService.getAnalysisHistory(1, 1).subscribe({
+      next: (res: any) => {
+        const latest = res.history?.[0];
+        if (latest) {
+          this.hasRealAnalysis = true;
+          this.lastAnalyzedDate = new Date(latest.createdAt).toLocaleDateString();
+
+          if (latest.skinType) {
+            this.selectedSkinType = this.matchSkinType(latest.skinType);
+          }
+
+          const conditions = latest.conditions || [];
+          this.selectedCondition = conditions.length > 0
+            ? this.matchCondition(conditions[0].label)
+            : 'None / Maintenance';
+        }
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        // No scan yet, or history couldn't load — keep defaults, not worth surfacing an error here
+      }
+    });
+  }
+
+  private matchSkinType(rawLabel: string): string {
+    const match = this.skinTypes.find(
+      (t) => t.toLowerCase() === rawLabel.toLowerCase()
+    );
+    return match || rawLabel;
+  }
+
+  private matchCondition(rawLabel: string): string {
+    const match = this.skinConditions.find(
+      (c) => c.toLowerCase() === rawLabel.toLowerCase()
+    );
+    return match || rawLabel; // shown as free text if it doesn't match a known option
   }
 
   fillForm(user: any) {
@@ -112,7 +160,11 @@ export class ProfileComponent implements OnInit {
     // Placeholder - connect to backend
     this.successMessage = 'Profile updated successfully!';
     this.editMode = false;
-    setTimeout(() => this.successMessage = '', 3000);
+    this.cdr.markForCheck();
+    setTimeout(() => {
+      this.successMessage = '';
+      this.cdr.markForCheck();
+    }, 3000);
   }
 
   analyzeWithAI(type: string) {

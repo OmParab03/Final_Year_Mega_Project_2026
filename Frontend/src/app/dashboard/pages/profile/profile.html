@@ -129,6 +129,9 @@
           </svg>
           <h3>Skin Type Classification</h3>
         </div>
+        <p class="list-hint" *ngIf="hasRealAnalysis" style="margin: -8px 0 4px 0;">
+          Based on your scan from {{ lastAnalyzedDate }}
+        </p>
         <button class="btn-ai" *ngIf="editMode" (click)="analyzeWithAI('skinType')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2">
@@ -163,7 +166,7 @@
                 <polyline points="6 9 12 15 18 9"/>
               </svg>
             </div>
-            <p *ngIf="!editMode">{{ selectedSkinType }}</p>
+            <p *ngIf="!editMode">{{ selectedSkinType || 'Not analyzed yet' }}</p>
           </div>
         </div>
       </div>
@@ -182,6 +185,9 @@
           </svg>
           <h3>Skin Condition</h3>
         </div>
+        <p class="list-hint" *ngIf="hasRealAnalysis" style="margin: -8px 0 4px 0;">
+          Based on your scan from {{ lastAnalyzedDate }}
+        </p>
         <button class="btn-ai" *ngIf="editMode" (click)="analyzeWithAI('condition')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2">
