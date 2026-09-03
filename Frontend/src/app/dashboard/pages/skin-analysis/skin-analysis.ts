@@ -1,5 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../../auth/auth.service';
+
+export interface SkinCondition {
+  label: string;
+  confidence: number | null;
+}
+
+export interface AnalysisHistoryItem {
+  id: string;
+  thumbnail: string;
+  date: string;
+  result: string;
+  severity: 'low' | 'medium' | 'high';
+}
 
 @Component({
   selector: 'app-skin-analysis',
@@ -8,7 +22,7 @@ import { CommonModule } from '@angular/common';
   templateUrl: './skin-analysis.html',
   styleUrls: ['./skin-analysis.css']
 })
-export class SkinAnalysis {
+export class SkinAnalysis implements OnInit {
   // Upload state
   previewUrl: string | null = null;
   selectedFile: File | null = null;
@@ -18,13 +32,20 @@ export class SkinAnalysis {
 
   // Results
   showResults: boolean = false;
-  result = {
+  result: { skinType: string; conditions: SkinCondition[] } = {
     skinType: '',
-    acne: '',
-    redness: '',
-    moisture: '',
-    score: 0
+    conditions: []
   };
+
+  // History (merged in below the upload/results section)
+  historyList: AnalysisHistoryItem[] = [];
+  historyLoading: boolean = true;
+
+  constructor(private authService: AuthService, private cdr: ChangeDetectorRef) {}
+
+  ngOnInit() {
+    this.loadHistory();
+  }
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -58,13 +79,21 @@ export class SkinAnalysis {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       this.errorMessage = 'Please upload a JPG, PNG, or WEBP image.';
-      setTimeout(() => this.errorMessage = '', 3000);
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
       this.errorMessage = 'File size must be less than 10MB.';
-      setTimeout(() => this.errorMessage = '', 3000);
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
       return;
     }
 
@@ -73,6 +102,9 @@ export class SkinAnalysis {
     const reader = new FileReader();
     reader.onload = () => {
       this.previewUrl = reader.result as string;
+      // FileReader callbacks run outside Angular's change-detection scheduler
+      // (this app uses zoneless CD), so the view won't refresh on its own here.
+      this.cdr.markForCheck();
     };
     reader.readAsDataURL(file);
   }
@@ -87,18 +119,61 @@ export class SkinAnalysis {
     if (!this.selectedFile) return;
     this.analyzing = true;
     this.showResults = false;
+    this.errorMessage = '';
 
-    // Simulate API call - replace with real backend call
-    setTimeout(() => {
-      this.analyzing = false;
-      this.showResults = true;
-      this.result = {
-        skinType: 'Oily',
-        acne: 'Medium',
-        redness: 'Low',
-        moisture: 'Normal',
-        score: 72
-      };
-    }, 2000);
+    this.authService.analyzeSkin(this.selectedFile).subscribe({
+      next: (res) => {
+        this.analyzing = false;
+        this.showResults = true;
+        const analysis = res.analysis;
+        this.result = {
+          skinType: analysis.skinType || 'Unknown',
+          conditions: analysis.conditions || []
+        };
+        this.cdr.markForCheck();
+        this.loadHistory(); // refresh the list below with the scan we just saved
+      },
+      error: (err) => {
+        this.analyzing = false;
+        this.errorMessage = err?.error?.message || 'Analysis failed. Please try again.';
+        this.cdr.markForCheck();
+        setTimeout(() => {
+          this.errorMessage = '';
+          this.cdr.markForCheck();
+        }, 4000);
+      }
+    });
+  }
+
+  loadHistory() {
+    this.historyLoading = true;
+    this.authService.getAnalysisHistory().subscribe({
+      next: (res) => {
+        this.historyList = (res.history || []).map((item: any) => ({
+          id: item.id,
+          thumbnail: item.imageUrl?.startsWith('/uploads/')
+            ? `${this.authService.apiOrigin}${item.imageUrl}`
+            : item.imageUrl,
+          date: new Date(item.createdAt).toLocaleDateString(),
+          result: item.result,
+          severity: item.severity
+        }));
+        this.historyLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.historyList = [];
+        this.historyLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /** Turns a raw 0-1 confidence into a plain-language qualifier for the UI. */
+  confidenceLabel(confidence: number | null): string {
+    if (confidence === null || confidence === undefined) return '';
+    if (confidence >= 0.75) return 'high confidence';
+    if (confidence >= 0.5) return 'moderate confidence';
+    return 'low confidence';
   }
 }

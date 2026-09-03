@@ -2,7 +2,7 @@
 
   <!-- Header -->
   <div class="tab-header">
-    <h2>Skin Analysis</h2>
+    <h2>Analyze Skin</h2>
     <p>Upload a photo to get AI-powered skin analysis results</p>
   </div>
 
@@ -146,38 +146,31 @@
       <!-- Results -->
       <div class="results-content" *ngIf="showResults && !analyzing">
 
-        <!-- Score -->
+        <!-- Plain-language classification summary -->
         <div class="score-card">
-          <div class="score-circle">
-            <span class="score-number">{{ result.score }}</span>
-            <span class="score-label">/ 100</span>
+          <div class="result-icon green classification-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5
+                       5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78
+                       1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
           </div>
           <div class="score-info">
-            <h4>Overall Skin Score</h4>
-            <p>Your skin health is in good condition</p>
+            <h4>Your skin type is {{ result.skinType }}</h4>
+            <p *ngIf="result.conditions.length === 0">
+              No specific concerns were spotted in this photo — your skin looks healthy overall.
+            </p>
+            <p *ngIf="result.conditions.length > 0">
+              We noticed {{ result.conditions.length === 1 ? 'a sign' : result.conditions.length + ' signs' }}
+              worth keeping an eye on, detailed below.
+            </p>
           </div>
         </div>
 
-        <!-- Result Items -->
-        <div class="result-items">
-
-          <div class="result-item">
-            <div class="result-icon green">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="2">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5
-                         5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78
-                         1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </div>
-            <div class="result-info">
-              <p class="result-label">Skin Type</p>
-              <p class="result-value">{{ result.skinType }}</p>
-            </div>
-            <span class="result-badge normal">Normal</span>
-          </div>
-
-          <div class="result-item">
+        <!-- Detected Conditions, in plain language -->
+        <div class="result-items" *ngIf="result.conditions.length > 0">
+          <div class="result-item" *ngFor="let condition of result.conditions">
             <div class="result-icon orange">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2">
@@ -187,52 +180,58 @@
               </svg>
             </div>
             <div class="result-info">
-              <p class="result-label">Acne Level</p>
-              <p class="result-value">{{ result.acne }}</p>
+              <p class="result-value">{{ condition.label }} detected</p>
+              <p class="result-label" *ngIf="condition.confidence !== null">
+                {{ confidenceLabel(condition.confidence) }}
+              </p>
             </div>
-            <span class="result-badge medium">Medium</span>
           </div>
-
-          <div class="result-item">
-            <div class="result-icon red">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="2">
-                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-              </svg>
-            </div>
-            <div class="result-info">
-              <p class="result-label">Redness</p>
-              <p class="result-value">{{ result.redness }}</p>
-            </div>
-            <span class="result-badge low">Low</span>
-          </div>
-
-          <div class="result-item">
-            <div class="result-icon blue">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="2">
-                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-              </svg>
-            </div>
-            <div class="result-info">
-              <p class="result-label">Moisture</p>
-              <p class="result-value">{{ result.moisture }}</p>
-            </div>
-            <span class="result-badge normal">Normal</span>
-          </div>
-
         </div>
 
         <!-- Recommendation -->
         <div class="recommendation">
-          <h4>Recommendation</h4>
-          <p>
-            Based on your analysis, we recommend using a gentle
-            oil-free moisturizer and applying sunscreen daily.
-            Consider using a salicylic acid cleanser for acne control.
+          <h4>What we'd suggest</h4>
+          <p *ngIf="result.conditions.length > 0">
+            Since you have {{ result.skinType.toLowerCase() }} skin with signs of
+            {{ result.conditions[0].label.toLowerCase() }}, try a gentle,
+            {{ result.skinType.toLowerCase() }}-friendly routine, apply sunscreen daily, and
+            look for products formulated to address {{ result.conditions[0].label.toLowerCase() }}.
+          </p>
+          <p *ngIf="result.conditions.length === 0">
+            Keep up a gentle cleansing routine suited for {{ result.skinType.toLowerCase() }}
+            skin and apply sunscreen daily to maintain your results.
           </p>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== HISTORY ==================== -->
+  <div class="history-section">
+    <h3 class="card-title">Analysis History</h3>
+
+    <div class="loading-state" *ngIf="historyLoading">
+      <div class="spinner"></div>
+      <p>Loading history...</p>
+    </div>
+
+    <div class="empty-state" *ngIf="!historyLoading && historyList.length === 0">
+      <p>No past scans yet — your analyses will show up here once you run one above.</p>
+    </div>
+
+    <div class="history-grid" *ngIf="!historyLoading && historyList.length > 0">
+      <div class="history-card" *ngFor="let item of historyList">
+        <div class="history-thumb">
+          <img [src]="item.thumbnail" alt="Scan thumbnail">
+        </div>
+        <div class="history-info">
+          <p class="history-date">{{ item.date }}</p>
+          <p class="history-result">{{ item.result }}</p>
+        </div>
+        <span class="badge" [ngClass]="item.severity">
+          {{ item.severity }}
+        </span>
       </div>
     </div>
   </div>

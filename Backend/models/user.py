@@ -1,68 +1,55 @@
 # models/user.py
 # ─────────────────────────────────────────────
-# User table — stores login info + profile data
+# users collection — login info + profile data
 # ─────────────────────────────────────────────
 
 from extensions import db
 from datetime   import datetime
+from bson       import ObjectId
 
-class User(db.Model):
-    __tablename__ = 'users'
 
-    # ── Primary Key ───────────────────────────
-    id = db.Column(
-        db.Integer,
-        primary_key=True,
-        autoincrement=True
-    )
+def create_user(name, email, password_hash):
+    now = datetime.utcnow()
+    result = db.users.insert_one({
+        'name':       name,
+        'email':      email,
+        'password':   password_hash,
+        'phone':      None,
+        'dob':        None,
+        'photo_url':  None,
+        'created_at': now,
+        'updated_at': now,
+    })
+    return find_by_id(result.inserted_id)
 
-    # ── Auth Fields (already exist) ───────────
-    name     = db.Column(db.String(100), nullable=False)
-    email    = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
 
-    # ── New Profile Fields ────────────────────
-    phone    = db.Column(db.String(20),  nullable=True, default=None)
-    dob      = db.Column(db.Date,        nullable=True, default=None)
-    photo_url = db.Column(db.Text,       nullable=True, default=None)
+def find_by_email(email):
+    return db.users.find_one({'email': email})
 
-    # ── Timestamps ────────────────────────────
-    created_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow,
-        nullable=False
-    )
-    updated_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
-        nullable=False
-    )
 
-    # ── Relationships ─────────────────────────
-    settings = db.relationship(
-        'UserSettings',
-        backref='user',
-        uselist=False,          # one-to-one
-        cascade='all, delete-orphan'
-    )
-    analyses = db.relationship(
-        'SkinAnalysis',
-        backref='user',
-        lazy=True,
-        cascade='all, delete-orphan'
-    )
+def find_by_id(user_id):
+    try:
+        oid = user_id if isinstance(user_id, ObjectId) else ObjectId(user_id)
+    except Exception:
+        return None
+    return db.users.find_one({'_id': oid})
 
-    # ── Serializer ────────────────────────────
-    def to_dict(self):
-        return {
-            'id':        self.id,
-            'name':      self.name,
-            'email':     self.email,
-            'phone':     self.phone    or '',
-            'dob':       str(self.dob) if self.dob else '',
-            'photo_url': self.photo_url or '',
-        }
 
-    def __repr__(self):
-        return f'<User {self.email}>'
+def update_user(user_id, updates: dict):
+    updates = {**updates, 'updated_at': datetime.utcnow()}
+    db.users.update_one({'_id': ObjectId(user_id)}, {'$set': updates})
+    return find_by_id(user_id)
+
+
+def to_dict(user):
+    if not user:
+        return None
+    dob = user.get('dob')
+    return {
+        'id':        str(user['_id']),
+        'name':      user.get('name', ''),
+        'email':     user.get('email', ''),
+        'phone':     user.get('phone') or '',
+        'dob':       dob.strftime('%Y-%m-%d') if dob else '',
+        'photo_url': user.get('photo_url') or '',
+    }

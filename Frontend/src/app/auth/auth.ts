@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { CommonModule } from '@angular/common';
@@ -32,7 +32,8 @@ export class Auth {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {
     this.authForm = this.fb.group({});
     this.initializeForm();
@@ -170,6 +171,7 @@ export class Auth {
     }
 
     this.authService.saveToken(res.token, res.user);
+    this.cdr.markForCheck();
 
     const delay = this.formType === 'signUp' ? 1000 : 300;
     setTimeout(() => {
@@ -182,9 +184,11 @@ export class Auth {
     const action = this.formType === 'signIn' ? 'Sign in' : 'Sign up';
     this.errorMessage =
       err.error?.message || `${action} failed. Please try again.`;
+    this.cdr.markForCheck();
 
     setTimeout(() => {
       this.errorMessage = '';
+      this.cdr.markForCheck();
     }, 5000);
   }
 

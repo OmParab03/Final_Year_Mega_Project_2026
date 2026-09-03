@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -18,9 +18,15 @@ export class SettingsComponent {
 
   successMessage: string = '';
 
+  constructor(private cdr: ChangeDetectorRef) {}
+
   saveSettings() {
     // Placeholder - connect to your backend
     this.successMessage = 'Settings saved successfully!';
-    setTimeout(() => this.successMessage = '', 3000);
+    this.cdr.markForCheck();
+    setTimeout(() => {
+      this.successMessage = '';
+      this.cdr.markForCheck();
+    }, 3000);
   }
 }

@@ -5,25 +5,34 @@
 # ─────────────────────────────────────────────
 
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Config:
-    # ── Database ──────────────────────────────
-    DB_USER     = 'root'
-    DB_PASSWORD = 'manager'
-    DB_HOST     = 'localhost'
-    DB_PORT     = '3306'
-    DB_NAME     = 'toxiscan'
-
-    SQLALCHEMY_DATABASE_URI = (
-        f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}'
-        f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-    )
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # ── Database (MongoDB) ────────────────────
+    MONGODB_URI     = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017')
+    MONGODB_DB_NAME = os.environ.get('MONGODB_DB_NAME', 'toxiscan')
 
     # ── JWT ───────────────────────────────────
-    JWT_SECRET_KEY = 'toxiscan-secret-key-change-in-production'
+    JWT_SECRET_KEY = os.environ.get(
+        'JWT_SECRET_KEY',
+        'toxiscan-secret-key-change-in-production'
+    )
 
     # ── File Upload ───────────────────────────
     UPLOAD_FOLDER        = os.path.join(os.getcwd(), 'uploads', 'profiles')
+    SKIN_SCAN_FOLDER     = os.path.join(os.getcwd(), 'uploads', 'skin_scans')
     MAX_CONTENT_LENGTH   = 5 * 1024 * 1024          # 5 MB max upload
     ALLOWED_EXTENSIONS   = {'jpg', 'jpeg', 'png', 'webp'}
+
+    # ── Hugging Face Spaces (skin analysis) ───
+    HF_SKIN_CLASSIFIER_SPACE = os.environ.get(
+        'HF_SKIN_CLASSIFIER_SPACE', 'Omkarrrrr/SkinClassifierSpace'
+    )
+    HF_SKIN_CONDITION_SPACE = os.environ.get(
+        'HF_SKIN_CONDITION_SPACE', 'Omkarrrrr/yolo'
+    )
+    # Optional but strongly recommended: without it, calls share the public
+    # anonymous-usage quota (easy to exhaust) instead of the token's own quota.
+    HF_TOKEN = os.environ.get('HF_TOKEN', '')
