@@ -30,7 +30,7 @@
           <span>History</span>
         </a>
 
-        <a class="nav-item" (click)="activeTab = 'analysis'">
+        <a class="nav-item" (click)="activeTab = 'analysis'" [class.active]="activeTab === 'analysis'">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
@@ -39,6 +39,8 @@
           </svg>
           <span>Skin Analysis</span>
         </a>
+
+
 
         <a class="nav-item" (click)="activeTab = 'profile'">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -240,6 +242,73 @@
         </div>
       </div>
 
+      <!-- Product Scanner on Dashboard -->
+      <div style="margin-top: 40px; margin-bottom: 20px;">
+        <h3 style="font-size: 18px; color: #111827; margin-bottom: 8px;">Product Ingredient Scanner</h3>
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">Upload a product ingredient label to see if it matches your skin profile.</p>
+        
+        <div class="upload-section single" *ngIf="!productScanResult">
+          <div class="upload-card full-width">
+            <div class="upload-area"
+                 (click)="fileInputProduct.click()"
+                 (dragover)="onDragOver($event)"
+                 (dragleave)="onDragLeave($event)"
+                 (drop)="onProductDrop($event)"
+                 [class.drag-over]="isDragging"
+                 [class.has-image]="productPreviewUrl">
+
+              <input type="file" #fileInputProduct hidden accept="image/*" (change)="onProductFileSelected($event)">
+
+              <div class="upload-placeholder" *ngIf="!productPreviewUrl">
+                <div class="upload-icon-wrapper">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M4 19V5a2 2 0 0 1 2-2h13.4a1 1 0 0 1 .8 1.6l-2.4 1.8 2.4 1.8a1 1 0 0 1 0 1.6l-2.4 1.8 2.4 1.8a1 1 0 0 1 0 1.6l-2.4 1.8 2.4 1.8a1 1 0 0 1-.8 1.6H6a2 2 0 0 1-2-2z"/>
+                  </svg>
+                </div>
+                <h3>Drop ingredient label photo here</h3>
+                <p>or click to browse files</p>
+              </div>
+
+              <div class="preview-container" *ngIf="productPreviewUrl">
+                <img [src]="productPreviewUrl" alt="Preview" class="preview-image">
+                <button class="remove-btn" (click)="removeProductImage(); $event.stopPropagation()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="upload-actions" *ngIf="productPreviewUrl">
+              <button class="btn-analyze" (click)="analyzeProductImage()" [disabled]="analyzingProduct">
+                {{ analyzingProduct ? 'Analyzing Product...' : 'Analyze Ingredients' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Scan Results -->
+        <div class="result-section" *ngIf="productScanResult">
+          <div class="score-card">
+            <h3>Compatibility Score</h3>
+            <div class="score-circle" [class.high]="productScanResult.score >= 80" [class.medium]="productScanResult.score >= 50 && productScanResult.score < 80" [class.low]="productScanResult.score < 50">
+              <span>{{ productScanResult.score }}</span><small>/100</small>
+            </div>
+          </div>
+          
+          <div class="ingredients-list">
+            <h3>Ingredient Breakdown</h3>
+            <div class="ingredient-item" *ngFor="let item of productScanResult.analysis" [class.avoid]="item.status === 'avoid'" [class.compatible]="item.status === 'compatible'">
+              <div class="ingredient-header">
+                <span class="ingredient-name">{{ item.ingredient }}</span>
+                <span class="ingredient-status">{{ item.status | uppercase }}</span>
+              </div>
+              <p class="ingredient-reason">{{ item.reason }}</p>
+            </div>
+          </div>
+          <button class="btn-primary" style="margin-top:20px" (click)="removeProductImage()">Scan Another Product</button>
+        </div>
+      </div>
+
       <!-- Recent History Preview -->
       <div class="recent-section" *ngIf="recentHistory.length > 0">
         <div class="section-header">
@@ -265,16 +334,41 @@
     <div class="content-area" *ngIf="!loading && activeTab === 'history'">
       <div class="tab-header">
         <h2>Analysis History</h2>
-        <p>Review your past skin analyses</p>
+        <p>Review your past skin and product analyses</p>
       </div>
-      <div class="empty-state" *ngIf="recentHistory.length === 0">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/>
-        </svg>
-        <h3>No history yet</h3>
-        <p>Start your first skin analysis to see results here</p>
-        <button class="btn-primary" (click)="activeTab = 'dashboard'">Start Analysis</button>
+
+      <div class="history-sections">
+        <!-- Skin History -->
+        <div class="history-section">
+          <h3>Skin Analyses</h3>
+          <div class="empty-state" *ngIf="recentHistory.length === 0">
+            <p>No skin history yet</p>
+          </div>
+          <div class="recent-grid" *ngIf="recentHistory.length > 0">
+            <div class="recent-card" *ngFor="let item of recentHistory">
+              <div class="recent-info">
+                <p class="recent-date">{{ item.createdAt | date }}</p>
+                <p class="recent-result">{{ item.result }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product History -->
+        <div class="history-section" style="margin-top: 30px;">
+          <h3>Product Scans</h3>
+          <div class="empty-state" *ngIf="productHistory.length === 0">
+            <p>No product scan history yet</p>
+          </div>
+          <div class="recent-grid" *ngIf="productHistory.length > 0">
+            <div class="recent-card" *ngFor="let item of productHistory">
+              <div class="recent-info">
+                <p class="recent-date">{{ item.createdAt | date }}</p>
+                <p class="recent-result">Compatibility Score: <strong>{{ item.score }}/100</strong></p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -397,6 +491,8 @@
         </div>
       </div>
     </div>
+
+
   </main>
 </div>
 

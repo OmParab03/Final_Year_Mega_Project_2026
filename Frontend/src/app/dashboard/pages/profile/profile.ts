@@ -14,33 +14,28 @@ import { AuthService } from '../../../auth/auth.service';
 export class ProfileComponent implements OnInit {
   user: any = null;
   loading: boolean = true;
+  saving: boolean = false;
   editMode: boolean = false;
   successMessage: string = '';
   errorMessage: string = '';
 
+  apiUrl = 'http://localhost:5000/api';
+
   // Personal Info
   fullName: string = '';
+  phone: string = '';
   dob: string = '';
-  allergies: string = '';
+  allergies: string = '';  // comma-separated string for UI
 
-  // Skin Type Options — the only classes the classifier model predicts
-  skinTypes = [
-    'Dry',
-    'Oily',
-    'Combination'
-  ];
+  // Skin Type Options
+  skinTypes = ['Dry', 'Oily', 'Combination'];
   selectedSkinType: string = '';
 
-  // Skin Condition Options — the only classes the condition model predicts
-  skinConditions = [
-    'None / Maintenance',
-    'Acne',
-    'Redness',
-    'Pigmentation'
-  ];
+  // Skin Condition Options
+  skinConditions = ['None / Maintenance', 'Acne', 'Redness', 'Pigmentation'];
   selectedCondition: string = 'None / Maintenance';
 
-  // Set once a real scan result is loaded, so the UI can say where these values came from
+  // Read-only display: date of last AI skin scan
   lastAnalyzedDate: string | null = null;
   hasRealAnalysis: boolean = false;
 
@@ -77,15 +72,12 @@ export class ProfileComponent implements OnInit {
         this.loading = false;
         this.errorMessage = 'Failed to load profile.';
         this.cdr.markForCheck();
-        setTimeout(() => {
-          this.errorMessage = '';
-          this.cdr.markForCheck();
-        }, 3000);
+        setTimeout(() => { this.errorMessage = ''; this.cdr.markForCheck(); }, 3000);
       }
     });
   }
 
-  /** Pulls the most recent skin scan and prefills the Skin Type / Condition sections with it. */
+  /** Pulls the most recent skin scan and prefills Skin Type / Condition if not set in profile. */
   loadLatestAnalysis() {
     this.authService.getAnalysisHistory(1, 1).subscribe({
       next: (res: any) => {
@@ -93,78 +85,106 @@ export class ProfileComponent implements OnInit {
         if (latest) {
           this.hasRealAnalysis = true;
           this.lastAnalyzedDate = new Date(latest.createdAt).toLocaleDateString();
-
-          if (latest.skinType) {
+          // Only prefill from scan if user hasn't set these manually
+          if (!this.selectedSkinType && latest.skinType) {
             this.selectedSkinType = this.matchSkinType(latest.skinType);
           }
-
-          const conditions = latest.conditions || [];
-          this.selectedCondition = conditions.length > 0
-            ? this.matchCondition(conditions[0].label)
-            : 'None / Maintenance';
+          if (this.selectedCondition === 'None / Maintenance') {
+            const conditions = latest.conditions || [];
+            this.selectedCondition = conditions.length > 0
+              ? this.matchCondition(conditions[0].label)
+              : 'None / Maintenance';
+          }
         }
         this.cdr.markForCheck();
       },
-      error: () => {
-        // No scan yet, or history couldn't load — keep defaults, not worth surfacing an error here
-      }
+      error: () => {} // No scan yet — silently skip
     });
   }
 
   private matchSkinType(rawLabel: string): string {
-    const match = this.skinTypes.find(
-      (t) => t.toLowerCase() === rawLabel.toLowerCase()
-    );
-    return match || rawLabel;
+    return this.skinTypes.find(t => t.toLowerCase() === rawLabel.toLowerCase()) || rawLabel;
   }
 
   private matchCondition(rawLabel: string): string {
-    const match = this.skinConditions.find(
-      (c) => c.toLowerCase() === rawLabel.toLowerCase()
-    );
-    return match || rawLabel; // shown as free text if it doesn't match a known option
+    return this.skinConditions.find(c => c.toLowerCase() === rawLabel.toLowerCase()) || rawLabel;
   }
 
   fillForm(user: any) {
-    this.fullName = user?.name || '';
-    this.dob = user?.dob || '';
-    this.allergies = user?.allergies || '';
+    this.fullName  = user?.name || '';
+    this.phone     = user?.phone || '';
+    this.dob       = user?.dob || '';
+    // allergies comes from DB as array — convert to comma string for the input
+    const rawAllergies = user?.allergies;
+    if (Array.isArray(rawAllergies)) {
+      this.allergies = rawAllergies.join(', ');
+    } else {
+      this.allergies = rawAllergies || '';
+    }
+    this.selectedSkinType  = user?.skin_type  || '';
+    this.selectedCondition = user?.skin_condition || 'None / Maintenance';
   }
 
-  // ✅ Calculate age from DOB
+  // Calculate age from DOB
   get calculatedAge(): number | null {
     if (!this.dob) return null;
-
     const birthDate = new Date(this.dob);
     const today = new Date();
-
     let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-
-    // If birthday hasn't happened yet this year, subtract 1
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
-      age--;
-    }
-
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
     return age >= 0 ? age : null;
   }
 
   toggleEdit() {
+    if (this.editMode) {
+      // Cancel — reload from server to discard unsaved changes
+      this.fillForm(this.user);
+    }
     this.editMode = !this.editMode;
   }
 
   saveChanges() {
-    // Placeholder - connect to backend
-    this.successMessage = 'Profile updated successfully!';
-    this.editMode = false;
-    this.cdr.markForCheck();
-    setTimeout(() => {
-      this.successMessage = '';
+    this.saving = true;
+    const token = this.authService.getToken();
+
+    const payload: any = {
+      name:           this.fullName.trim(),
+      phone:          this.phone.trim(),
+      dob:            this.dob,
+      allergies:      this.allergies,   // backend handles comma-string → array
+      skin_type:      this.selectedSkinType,
+      skin_condition: this.selectedCondition,
+    };
+
+    fetch(`${this.apiUrl}/profile`, {
+      method:  'PUT',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      this.saving = false;
+      if (data.user) {
+        this.user = data.user;
+        this.fillForm(data.user);
+        this.successMessage = 'Profile saved to database successfully!';
+        this.editMode = false;
+      } else {
+        this.errorMessage = data.message || 'Failed to save profile.';
+      }
       this.cdr.markForCheck();
-    }, 3000);
+      setTimeout(() => { this.successMessage = ''; this.errorMessage = ''; this.cdr.markForCheck(); }, 3000);
+    })
+    .catch(() => {
+      this.saving = false;
+      this.errorMessage = 'Connection error. Could not save profile.';
+      this.cdr.markForCheck();
+      setTimeout(() => { this.errorMessage = ''; this.cdr.markForCheck(); }, 3000);
+    });
   }
 
   analyzeWithAI(type: string) {
@@ -176,3 +196,4 @@ export class ProfileComponent implements OnInit {
     this.router.navigate(['/']);
   }
 }
+

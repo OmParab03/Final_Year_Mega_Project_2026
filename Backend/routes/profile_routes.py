@@ -66,6 +66,22 @@ def update_profile():
         else:
             updates['dob'] = None
 
+    if 'allergies' in data:
+        raw = data['allergies']
+        if isinstance(raw, list):
+            updates['allergies'] = [a.strip() for a in raw if a.strip()]
+        elif isinstance(raw, str):
+            # Convert comma-separated string to list
+            updates['allergies'] = [a.strip() for a in raw.split(',') if a.strip()]
+        else:
+            updates['allergies'] = []
+
+    if 'skin_type' in data:
+        updates['skin_type'] = data['skin_type'].strip() or None
+
+    if 'skin_condition' in data:
+        updates['skin_condition'] = data['skin_condition'].strip() or None
+
     user = user_model.update_user(user_id, updates)
 
     return jsonify({
