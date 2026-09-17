@@ -27,11 +27,13 @@ def create_app():
     from routes.profile_routes  import profile_bp
     from routes.settings_routes import settings_bp
     from routes.analysis_routes import analysis_bp
+    from routes.product_routes  import product_bp
 
     app.register_blueprint(auth_bp,     url_prefix='/api')
     app.register_blueprint(profile_bp,  url_prefix='/api/profile')
     app.register_blueprint(settings_bp, url_prefix='/api/settings')
     app.register_blueprint(analysis_bp, url_prefix='/api/analysis')
+    app.register_blueprint(product_bp,  url_prefix='/api/product')
 
     # ── Serve uploaded profile photos ─────────
     @app.route('/uploads/profiles/<filename>')
@@ -42,6 +44,12 @@ def create_app():
     @app.route('/uploads/skin_scans/<filename>')
     def serve_skin_scan(filename):
         return send_from_directory(app.config['SKIN_SCAN_FOLDER'], filename)
+
+    # ── Serve uploaded product-scan photos ──────
+    @app.route('/uploads/product_scans/<filename>')
+    def serve_product_scan(filename):
+        import os
+        return send_from_directory(app.config.get('PRODUCT_SCAN_FOLDER', os.path.join(app.config['UPLOAD_FOLDER'], 'product_scans')), filename)
 
     # ── Health check ──────────────────────────
     @app.route('/')

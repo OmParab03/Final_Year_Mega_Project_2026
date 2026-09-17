@@ -61,7 +61,7 @@
   <div class="upload-section">
 
     <!-- Upload Card -->
-    <div class="upload-card">
+    <div class="upload-card" *ngIf="!productScanResult">
       <div class="upload-area"
            (click)="fileInput.click()"
            (dragover)="onDragOver($event)"
@@ -121,6 +121,170 @@
         </button>
       </div>
     </div>
+
+    <!-- Product Scan Results — Full Report -->
+    <div class="report-wrapper" *ngIf="productScanResult">
+
+      <!-- Report Header -->
+      <div class="report-header">
+        <h2 class="report-title">Personalized Beauty Product Compatibility Report</h2>
+        <p class="report-subtitle" *ngIf="userProfile">
+          Analyzed for: <strong>{{ userProfile.name }}</strong>
+          (Age {{ userProfile.age }}, {{ userProfile.skin_type || 'Unknown' }} Skin
+          <span *ngIf="userProfile.skin_condition"> — {{ userProfile.skin_condition }}</span>)
+        </p>
+      </div>
+
+      <!-- Row 1: Score + Harmful + Beneficial -->
+      <div class="report-row">
+
+        <!-- Compatibility Score -->
+        <div class="report-card score-panel">
+          <h4 class="panel-title">Compatibility Score</h4>
+          <div class="gauge-container">
+            <svg class="gauge-svg" viewBox="0 0 200 120">
+              <path d="M20,110 A90,90 0 0,1 180,110" fill="none" stroke="#e5e7eb" stroke-width="16" stroke-linecap="round"/>
+              <path class="gauge-fill" d="M20,110 A90,90 0 0,1 180,110" fill="none"
+                [attr.stroke]="productScanResult.score >= 75 ? '#16a34a' : productScanResult.score >= 50 ? '#d97706' : '#dc2626'"
+                stroke-width="16" stroke-linecap="round"
+                [attr.stroke-dasharray]="(productScanResult.score / 100) * 283 + ' 283'"
+                stroke-dashoffset="0"/>
+            </svg>
+            <div class="gauge-value">
+              <span class="gauge-number"
+                [class.gauge-green]="productScanResult.score >= 75"
+                [class.gauge-amber]="productScanResult.score >= 50 && productScanResult.score < 75"
+                [class.gauge-red]="productScanResult.score < 50">
+                {{ productScanResult.score }}
+              </span>
+              <span class="gauge-max">/100</span>
+            </div>
+          </div>
+          <div class="score-badge"
+            [class.badge-green]="productScanResult.score >= 75"
+            [class.badge-amber]="productScanResult.score >= 50 && productScanResult.score < 75"
+            [class.badge-red]="productScanResult.score < 50">
+            {{ productScanResult.score_label || 'Analyzed' }}
+          </div>
+          <p class="score-summary">{{ productScanResult.score_summary }}</p>
+        </div>
+
+        <!-- Harmful Ingredients -->
+        <div class="report-card ingredient-panel harmful-panel">
+          <h4 class="panel-title caution-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Ingredient Breakdown — Caution / Harmful
+          </h4>
+          <div *ngIf="!productScanResult.harmful_ingredients?.length" class="empty-panel">
+            <span>✅ No harmful ingredients detected for your profile!</span>
+          </div>
+          <div class="ingredient-row" *ngFor="let ing of productScanResult.harmful_ingredients">
+            <div class="ing-info">
+              <div class="ing-icon harmful-icon">⚠️</div>
+              <div>
+                <p class="ing-name">{{ ing.name }}</p>
+                <p class="ing-reason">{{ ing.reason }}</p>
+              </div>
+            </div>
+            <div class="risk-badge"
+              [class.risk-high]="ing.risk === 'High'"
+              [class.risk-med]="ing.risk === 'Medium'"
+              [class.risk-low]="ing.risk === 'Low'">
+              Risk: {{ ing.risk }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Beneficial Ingredients -->
+        <div class="report-card ingredient-panel beneficial-panel">
+          <h4 class="panel-title beneficial-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Ingredient Breakdown — Beneficial / Suitable
+          </h4>
+          <div *ngIf="!productScanResult.beneficial_ingredients?.length" class="empty-panel">
+            <span>No specifically beneficial ingredients identified.</span>
+          </div>
+          <div class="ingredient-row" *ngFor="let ing of productScanResult.beneficial_ingredients">
+            <div class="ing-info">
+              <div class="ing-icon beneficial-icon">✅</div>
+              <div>
+                <p class="ing-name">{{ ing.name }}</p>
+                <p class="ing-reason">{{ ing.reason }}</p>
+              </div>
+            </div>
+            <div class="rating-badge"
+              [class.rating-excellent]="ing.rating === 'Excellent'"
+              [class.rating-good]="ing.rating === 'Good'"
+              [class.rating-moderate]="ing.rating === 'Moderate'">
+              {{ ing.rating }}
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /report-row -->
+
+      <!-- Row 2: AI Summary + Issues Meter + Alternatives -->
+      <div class="report-row">
+
+        <!-- AI Summary -->
+        <div class="report-card ai-summary-panel">
+          <h4 class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            AI Summary &amp; Advice
+          </h4>
+          <p class="ai-summary-text">{{ productScanResult.ai_summary }}</p>
+        </div>
+
+        <!-- Potential Issues Meter -->
+        <div class="report-card issues-panel" *ngIf="productScanResult.potential_issues">
+          <h4 class="panel-title">Potential Issues Meter</h4>
+          <p class="issues-subtitle">Tailored to your skin profile</p>
+          <div class="issue-row">
+            <span class="issue-label">Dryness</span>
+            <div class="issue-bar-track">
+              <div class="issue-bar-fill dryness-bar" [style.width.%]="productScanResult.potential_issues.dryness"></div>
+            </div>
+            <span class="issue-val">{{ productScanResult.potential_issues.dryness }}%</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">Irritation</span>
+            <div class="issue-bar-track">
+              <div class="issue-bar-fill irritation-bar" [style.width.%]="productScanResult.potential_issues.irritation"></div>
+            </div>
+            <span class="issue-val">{{ productScanResult.potential_issues.irritation }}%</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">Pore Clogging</span>
+            <div class="issue-bar-track">
+              <div class="issue-bar-fill pore-bar" [style.width.%]="productScanResult.potential_issues.pore_clogging"></div>
+            </div>
+            <span class="issue-val">{{ productScanResult.potential_issues.pore_clogging }}%</span>
+          </div>
+        </div>
+
+        <!-- Recommended Alternatives -->
+        <div class="report-card alternatives-panel" *ngIf="productScanResult.recommended_alternatives?.length">
+          <h4 class="panel-title">Recommended Alternatives</h4>
+          <div class="alt-grid">
+            <div class="alt-item" *ngFor="let alt of productScanResult.recommended_alternatives">
+              <div class="alt-icon">💊</div>
+              <span>{{ alt }}</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /report-row -->
+
+      <!-- Disclaimer + Scan Again -->
+      <div class="report-footer">
+        <p class="disclaimer">⚕️ Disclaimer: This analysis is for informational purposes only. Consult a dermatologist for personalized advice.</p>
+        <button class="btn-scan-again" (click)="removeImage()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.55"/></svg>
+          Scan Another Product
+        </button>
+      </div>
+
+    </div><!-- /report-wrapper -->
 
     <!-- Tips Card -->
     <div class="tips-card">

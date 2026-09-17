@@ -1,6 +1,7 @@
 import { Component, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../auth/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -23,10 +24,15 @@ export class HomeComponent implements OnInit {
   analyzing: boolean = false;
   errorMessage: string = '';
 
+  // Product Analysis State
+  productScanResult: any = null;
+  userProfile: any = null;
+  apiUrl = 'http://localhost:5000/api';
+
   // Recent history
   recentHistory: any[] = [];
 
-  constructor(private router: Router, private cdr: ChangeDetectorRef) {}
+  constructor(private router: Router, private cdr: ChangeDetectorRef, private authService: AuthService) {}
 
   ngOnInit() {
     this.loadStats();
@@ -94,6 +100,7 @@ export class HomeComponent implements OnInit {
     }
 
     this.selectedFile = file;
+    this.productScanResult = null; // Clear previous results
     const reader = new FileReader();
     reader.onload = () => {
       this.previewUrl = reader.result as string;
@@ -107,16 +114,49 @@ export class HomeComponent implements OnInit {
   removeImage() {
     this.previewUrl = null;
     this.selectedFile = null;
+    this.productScanResult = null;
   }
 
   analyzeImage() {
     if (!this.selectedFile) return;
     this.analyzing = true;
-    setTimeout(() => {
+    this.cdr.markForCheck();
+
+    const formData = new FormData();
+    formData.append('photo', this.selectedFile);
+
+    // Also load user profile for the report header
+    fetch(`${this.apiUrl}/profile`, {
+      headers: { 'Authorization': `Bearer ${this.authService.getToken()}` }
+    }).then(r => r.json()).then(p => { this.userProfile = p; this.cdr.markForCheck(); }).catch(() => {});
+
+    fetch(`${this.apiUrl}/product/scan`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.authService.getToken()}`
+      },
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
       this.analyzing = false;
+      if (data.analysis) {
+        this.productScanResult = data.analysis;
+      } else {
+        this.errorMessage = data.message || 'Product analysis failed';
+        setTimeout(() => this.errorMessage = '', 3000);
+      }
       this.cdr.markForCheck();
-      this.router.navigate(['/dashboard/skin-analysis']);
-    }, 1500);
+    })
+    .catch(err => {
+      this.analyzing = false;
+      this.errorMessage = 'Failed to connect to server';
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
+    });
   }
 
   goToHistory() {

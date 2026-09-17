@@ -81,6 +81,18 @@
         </div>
 
         <div class="list-item">
+          <div class="list-label">Phone Number</div>
+          <div class="list-value">
+            <input *ngIf="editMode"
+                   type="tel"
+                   [(ngModel)]="phone"
+                   placeholder="e.g. +91 9876543210"
+                   class="info-input">
+            <p *ngIf="!editMode">{{ phone || 'Not set' }}</p>
+          </div>
+        </div>
+
+        <div class="list-item">
           <div class="list-label">Date of Birth</div>
           <div class="list-value">
             <input *ngIf="editMode"
@@ -230,14 +242,15 @@
 
     <!-- Save Button -->
     <div class="save-wrapper" *ngIf="editMode">
-      <button class="btn-save" (click)="saveChanges()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+      <button class="btn-save" (click)="saveChanges()" [disabled]="saving">
+        <svg *ngIf="!saving" width="16" height="16" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2">
           <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
           <polyline points="17 21 17 13 7 13 7 21"/>
           <polyline points="7 3 7 8 15 8"/>
         </svg>
-        Save Changes
+        <div class="btn-spinner" *ngIf="saving" style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite"></div>
+        {{ saving ? 'Saving...' : 'Save Changes' }}
       </button>
     </div>
 

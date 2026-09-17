@@ -872,6 +872,134 @@
   display: none;
 }
 
+/* ==================== HISTORY SECTIONS ==================== */
+.history-sections {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 8px;
+}
+
+/* ==================== PRODUCT SCAN RESULTS ==================== */
+.result-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.score-card {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  border: 1px solid #f0f1f5;
+  text-align: center;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.score-card h3 {
+  font-size: 16px;
+  color: #374151;
+  margin-bottom: 16px;
+}
+
+.score-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 8px solid #e5e7eb;
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.score-circle small {
+  font-size: 16px;
+  color: #9ca3af;
+  margin-left: 4px;
+}
+
+.score-circle.high { border-color: #16a34a; color: #16a34a; }
+.score-circle.medium { border-color: #d97706; color: #d97706; }
+.score-circle.low { border-color: #dc2626; color: #dc2626; }
+
+.ingredients-list {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #f0f1f5;
+}
+
+.ingredients-list h3 {
+  margin-bottom: 16px;
+  font-size: 18px;
+  color: #111827;
+}
+
+.ingredient-item {
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.ingredient-item.compatible {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.ingredient-item.avoid {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.ingredient-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.ingredient-name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 15px;
+}
+
+.ingredient-status {
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.ingredient-item.compatible .ingredient-status {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.ingredient-item.avoid .ingredient-status {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.ingredient-reason {
+  font-size: 14px;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 1024px) {
   .stats-row {
