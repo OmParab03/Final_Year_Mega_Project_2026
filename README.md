@@ -510,16 +510,6 @@ This is a **decision-support / awareness tool**, not a medical device.
 | 23UAM087 | Omkar Umesh Parab |
 | 23UAM093 | Pradip Mallikarjun Patil |
 
----
-
-## References
-
-1. J. Lee et al., "Deep learning-based skin care product recommendation: A focus on cosmetic ingredient analysis and facial skin conditions," *J. Cosmet. Dermatol.*, 2024. doi: 10.1111/jocd.16218
-2. R. E. H. Khan and K. Singh, "AI-driven personalized skincare: Enhancing skin analysis and product recommendation systems," *J. Sci. Innov. Adv. Res.*, May 2025.
-3. A. T., A. S. Aishwarya, and C. Deeksha, "Recommendation of skincare product using deep learning techniques," *IOSR J. Comput. Eng. (IOSR-JCE)*, vol. 27, no. 4, pp. 66–71, Jul.–Aug. 2025. doi: 10.9790/0661-2704016671
-4. H. Seitaj and V. Elangovan, "Information extraction from product labels: A machine vision approach," *Int. J. Artif. Intell. Appl. (IJAIA)*, Mar. 2024. doi: 10.5121/ijaia.2024.15204
-5. S. Lodha, S. Shinde, A. Anand, P. Dalvi, and J. Nalavade, "NutriScan: AI-based ingredient detection and evaluation," *Int. J. Eng. Res. Technol. (IJERT)*, May 2025.
-
 Run commands
 frontend: ng serve
 backend: .\venv\Scripts\python.exe app.py
